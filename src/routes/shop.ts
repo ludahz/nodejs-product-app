@@ -1,11 +1,14 @@
-import express from "express";
-import path from "path";
+import express from 'express'
+import path from 'path'
 
+import { products } from './admin'
 
-const router =express.Router()
+const router = express.Router()
 
 router.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../', 'views', 'shop.html'))
+	console.log(products)
+	// res.sendFile(path.join(__dirname, '../', 'views', 'shop.html'))
+	res.render('shop', { products, pageTitle: 'Shop', path: '/' })
 })
 
 export default router
