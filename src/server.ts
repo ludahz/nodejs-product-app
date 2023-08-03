@@ -1,33 +1,31 @@
-import express, { Express } from 'express'
+import express, { Express, Request, Response, NextFunction } from 'express'
 import { resolve } from 'path'
 
 import shopRoutes from './routes/shop'
-import { adminRoutes, products } from './routes/admin'
+import { adminRoutes } from './routes/admin'
 import mainDir from './utils/path'
+import { get404 } from './controllers/error'
 
 const app: Express = express()
 const PORT: number = 3000
 
-// set ejs as the view engine
+// Set up view engine and views directory
 app.set('view engine', 'ejs')
+app.set('views', resolve(mainDir, 'views'))
 
-// Set the directory for your views
-app.set('views', 'src/views')
-
+// Middleware
 app.use(express.urlencoded({ extended: true }))
 app.use(express.json())
-
 app.use(express.static(resolve(mainDir, '..', 'public')))
 
+// Routes
 app.use('/admin', adminRoutes)
 app.use(shopRoutes)
 
-app.use((req, res) => {
-	// const filePath = resolve(mainDir, 'views', '404.html')
-	// res.status(404).sendFile(filePath)
-	res.status(404).render('404', { pageTitle: 'Page Not Found' })
-})
+// 404 Not Found Route
+app.use(get404)
 
+// Start the server
 app.listen(PORT, () => {
 	console.log(`App is listening at port ${PORT}`)
 })

@@ -12,7 +12,11 @@ body {
 
 main {
 	padding: 1rem;
-	margin: auto;
+	/* margin: auto; */
+	display: flex;
+
+	justify-items: center;
+	justify-content: center;
 }
 
 .main-header {
@@ -51,15 +55,15 @@ main {
 	color: #ffeb3b;
 }
 
-.grid {
+/* .grid {
 	display: flex;
-	flex-wrap: wrap;
-	justify-content: space-around;
-	align-items: stretch;
+	flex-flow: wrap;
+	justify-content: space-evenly;
 }
 
 .card {
 	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.26);
+	margin: 10px 0;
 }
 
 .card__header,
@@ -108,4 +112,93 @@ main {
 .btn:active {
 	background-color: #00695c;
 	color: white;
+} */
+
+/* CSS Reset - Optional, use your preferred reset styles */
+
+/* Main Styles */
+.grid-container {
+	/* display: flex; */
+	/* justify-content: center; Center the grid horizontally */
+
+	border: 4px solid black;
+	min-width: 90vw;
+}
+
+.grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+
+	grid-gap: 20px;
+}
+
+.card {
+	border-radius: 8px;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+	overflow: hidden;
+	transition: box-shadow 0.2s ease;
+}
+
+.card:hover {
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.card__image img {
+	width: 100%;
+	height: 200px;
+	object-fit: contain;
+}
+
+.card__header {
+	padding: 10px;
+	background-color: #f0f0f0;
+}
+
+.product__title {
+	font-size: 18px;
+	font-weight: bold;
+}
+
+.card__content {
+	padding: 10px;
+}
+
+.product__price {
+	font-size: 16px;
+	font-weight: bold;
+	margin-bottom: 5px;
+}
+
+.product__description {
+	font-size: 14px;
+	color: #666;
+}
+
+.card__actions {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	padding: 10px;
+	background-color: #f0f0f0;
+}
+
+.btn {
+	padding: 10px 20px;
+	background-color: #007bff;
+	color: #fff;
+	border: none;
+	border-radius: 4px;
+	cursor: pointer;
+	transition: background-color 0.2s ease;
+}
+
+.btn:hover {
+	background-color: #0056b3;
+}
+
+.no-products {
+	text-align: center;
+	margin-top: 50px;
+	font-size: 24px;
+	color: #666;
 }
