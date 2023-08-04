@@ -1,6 +1,5 @@
 import { Request, Response } from 'express'
-
-export const products: object[] = []
+import { Product } from '../models/product'
 
 export const getAddProducts = (req: Request, res: Response) => {
 	res.render('add-product', {
@@ -21,12 +20,16 @@ export const postAddProduct = (req: Request, res: Response) => {
 			'A very interesting book about so many even more interesting things!',
 	}
 
-	products.push(newProduct)
+	const product = new Product(req.body.title)
+	product.save()
 
 	res.redirect('/')
 }
 
-export const getProducts = (req: Request, res: Response) => {
-	console.log(products)
-	res.render('shop', { products, pageTitle: 'Shop', path: '/' })
+export const getProducts = async (req: Request, res: Response) => {
+	Product.fetchAll(async (prod: any) => {
+		const products = await prod
+
+		res.render('shop', { pageTitle: 'Shop', path: '/', products })
+	})
 }
