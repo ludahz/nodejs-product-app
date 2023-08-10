@@ -19,18 +19,41 @@ const writeProductsFile = (
 
 const parseJson = (jsonString: string) => {
 	try {
-		return JSON.parse(jsonString)
+		return jsonString ? JSON.parse(jsonString) : []
 	} catch (error) {
 		console.error('Error parsing JSON:', error)
 		return []
 	}
 }
 
+// const parseJson = (jsonString: string) => {
+// 	try {
+// 		return JSON.parse(jsonString)
+// 	} catch (error) {
+// 		console.error('Error parsing JSON:', error)
+// 		return []
+// 	}
+// }
+
 export class Product {
 	title: string
+	imageUrl: string
+	description: string
+	price: number
+	id: string | null
 
-	constructor(t: string) {
-		this.title = t
+	constructor(
+		id: string | null,
+		title: string,
+		imageUrl: string,
+		description: string,
+		price: number
+	) {
+		this.id = id
+		this.title = title
+		this.imageUrl = imageUrl
+		this.description = description
+		this.price = price
 	}
 
 	save(): void {
@@ -41,8 +64,16 @@ export class Product {
 			}
 
 			const products = parseJson(fileContent.toString())
-			products.push(this)
-
+			console.log('THis is this id', this)
+			if (this.id) {
+				const existingProductIndex = products.findIndex(
+					(product: any) => product.id === this.id
+				)
+				products[existingProductIndex] = this
+			} else {
+				this.id = Math.random().toString()
+				products.push(this)
+			}
 			writeProductsFile(products, (writeErr) => {
 				if (writeErr) {
 					console.error('Error writing to file:', writeErr)
@@ -58,6 +89,38 @@ export class Product {
 				return cb([])
 			}
 			cb(parseJson(fileContent.toString()))
+		})
+	}
+
+	static findById(id: string, cb: any) {
+		readProductsFile((err, fileContent) => {
+			if (err) {
+				console.log('There was an error', err)
+				return cb([])
+			}
+			const products = parseJson(fileContent.toString())
+			const product = products.find((p: any) => p.id === id)
+			cb(product)
+		})
+	}
+
+	static deleteById(id: string, cb: any) {
+		readProductsFile((err, fileContent) => {
+			if (err) {
+				console.log('There was an error', err)
+				return cb([])
+			}
+			const products = parseJson(fileContent.toString())
+			const updatedProducts = products.filter((p: any) => p.id !== id)
+
+			writeProductsFile(updatedProducts, (writeErr) => {
+				if (writeErr) {
+					console.error('Error writing to file:', writeErr)
+				}
+				cb(writeErr)
+			})
+
+			cb(updatedProducts)
 		})
 	}
 }
