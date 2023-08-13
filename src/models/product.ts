@@ -1,21 +1,9 @@
-import fs from 'fs'
+import fs from 'fs/promises'
 import path from 'path'
 import mainDir from '../utils/path'
+import { Cart } from './cart'
 
 const productsFilePath = path.join(mainDir, 'data', 'products.json')
-
-const readProductsFile = (
-	callback: (error: NodeJS.ErrnoException | null, data: Buffer) => void
-) => {
-	fs.readFile(productsFilePath, callback)
-}
-
-const writeProductsFile = (
-	data: any,
-	callback: (error: NodeJS.ErrnoException | null) => void
-) => {
-	fs.writeFile(productsFilePath, JSON.stringify(data), callback)
-}
 
 const parseJson = (jsonString: string) => {
 	try {
@@ -26,14 +14,23 @@ const parseJson = (jsonString: string) => {
 	}
 }
 
-// const parseJson = (jsonString: string) => {
-// 	try {
-// 		return JSON.parse(jsonString)
-// 	} catch (error) {
-// 		console.error('Error parsing JSON:', error)
-// 		return []
-// 	}
-// }
+async function readFileContent(filePath: string): Promise<string> {
+	try {
+		const fileContent = await fs.readFile(filePath)
+		return fileContent.toString()
+	} catch (error) {
+		console.error('Error reading file:', error)
+		return ''
+	}
+}
+
+async function writeFileContent(filePath: string, data: any): Promise<void> {
+	try {
+		await fs.writeFile(filePath, JSON.stringify(data))
+	} catch (error) {
+		console.error('Error writing to file:', error)
+	}
+}
 
 export class Product {
 	title: string
@@ -56,15 +53,11 @@ export class Product {
 		this.price = price
 	}
 
-	save(): void {
-		readProductsFile((err, fileContent) => {
-			if (err) {
-				console.error(err)
-				return
-			}
+	async save(): Promise<void> {
+		try {
+			const fileContent = await readFileContent(productsFilePath)
+			const products = parseJson(fileContent)
 
-			const products = parseJson(fileContent.toString())
-			console.log('THis is this id', this)
 			if (this.id) {
 				const existingProductIndex = products.findIndex(
 					(product: any) => product.id === this.id
@@ -74,53 +67,43 @@ export class Product {
 				this.id = Math.random().toString()
 				products.push(this)
 			}
-			writeProductsFile(products, (writeErr) => {
-				if (writeErr) {
-					console.error('Error writing to file:', writeErr)
-				}
-			})
-		})
+
+			await writeFileContent(productsFilePath, products)
+		} catch (error) {
+			console.error('Error saving product:', error)
+		}
 	}
 
-	static fetchAll(cb: any) {
-		readProductsFile((err, fileContent) => {
-			if (err) {
-				console.log('There was an error', err)
-				return cb([])
-			}
-			cb(parseJson(fileContent.toString()))
-		})
+	static async fetchAll(): Promise<any[]> {
+		try {
+			const fileContent = await readFileContent(productsFilePath)
+			return parseJson(fileContent)
+		} catch (error) {
+			console.error('Error fetching products:', error)
+			return []
+		}
 	}
 
-	static findById(id: string, cb: any) {
-		readProductsFile((err, fileContent) => {
-			if (err) {
-				console.log('There was an error', err)
-				return cb([])
-			}
-			const products = parseJson(fileContent.toString())
-			const product = products.find((p: any) => p.id === id)
-			cb(product)
-		})
+	static async findById(id: string): Promise<any | null> {
+		try {
+			const fileContent = await readFileContent(productsFilePath)
+			const products = parseJson(fileContent)
+			return products.find((p: any) => p.id === id) || null
+		} catch (error) {
+			console.error('Error finding product:', error)
+			return null
+		}
 	}
 
-	static deleteById(id: string, cb: any) {
-		readProductsFile((err, fileContent) => {
-			if (err) {
-				console.log('There was an error', err)
-				return cb([])
-			}
-			const products = parseJson(fileContent.toString())
+	static async deleteById(id: string): Promise<void> {
+		try {
+			const fileContent = await readFileContent(productsFilePath)
+			const products = parseJson(fileContent)
 			const updatedProducts = products.filter((p: any) => p.id !== id)
-
-			writeProductsFile(updatedProducts, (writeErr) => {
-				if (writeErr) {
-					console.error('Error writing to file:', writeErr)
-				}
-				cb(writeErr)
-			})
-
-			cb(updatedProducts)
-		})
+			await Cart.deleteProduct(id)
+			await writeFileContent(productsFilePath, updatedProducts)
+		} catch (error) {
+			console.error('Error deleting product:', error)
+		}
 	}
 }

@@ -9,81 +9,100 @@ export const getAddProducts = (req: Request, res: Response) => {
 	})
 }
 
-export const getAdminProducts = (req: Request, res: Response) => {
-	Product.fetchAll(async (prod: any) => {
-		const products = await prod
-
+export const getAdminProducts = async (req: Request, res: Response) => {
+	try {
+		const products = await Product.fetchAll()
 		res.render('admin/product-list', {
 			pageTitle: 'Admin Products',
 			path: '/admin/products',
 			products,
 		})
-	})
+	} catch (error) {
+		console.error('Error getting admin products:', error)
+		res.status(500).render('error', {
+			pageTitle: 'Error',
+			errorMessage: 'An error occurred.',
+		})
+	}
 }
 
-export const postAddProduct = (req: Request, res: Response) => {
+export const postAddProduct = async (req: Request, res: Response) => {
 	console.log(req.body)
 
 	const { title, imageUrl, description, price } = req.body
 
-	// const newProduct = {
-	// 	title: req.body.title,
-	// 	image:
-	// 		'https://cdn.pixabay.com/photo/2016/03/31/20/51/book-1296045_960_720.png',
-	// 	price: '$19.99',
-	// 	description:
-	// 		'A very interesting book about so many even more interesting things!',
-	// }
-
-	const product = new Product(null, title, imageUrl, description, price)
-	product.save()
-
-	res.redirect('/')
+	try {
+		const product = new Product(null, title, imageUrl, description, price)
+		await product.save()
+		res.redirect('/')
+	} catch (error) {
+		console.error('Error adding product:', error)
+		res.status(500).render('error', {
+			pageTitle: 'Error',
+			errorMessage: 'An error occurred.',
+		})
+	}
 }
 
-export const postEditProduct = (req: Request, res: Response) => {
+export const postEditProduct = async (req: Request, res: Response) => {
 	console.log('This is post', req.body)
 
 	const { title, imageUrl, description, price, productId } = req.body
 
-	const product = new Product(productId, title, imageUrl, description, price)
-	product.save()
-
-	res.redirect('/admin/products')
+	try {
+		const product = new Product(productId, title, imageUrl, description, price)
+		await product.save()
+		res.redirect('/admin/products')
+	} catch (error) {
+		console.error('Error editing product:', error)
+		res.status(500).render('error', {
+			pageTitle: 'Error',
+			errorMessage: 'An error occurred.',
+		})
+	}
 }
 
-export const postDeleteProduct = (req: Request, res: Response) => {
+export const postDeleteProduct = async (req: Request, res: Response) => {
 	console.log('This is post', req.params)
 
 	const prodId = req.params.productId
 
-	// const { title, imageUrl, description, price, productId } = req.body
-
-	// const product = new Product(productId, title, imageUrl, description, price)
-	// product.save()
-
-	Product.deleteById(prodId, (product: any) => {
-		console.log('This is product', product)
-		// res.redirect('/admin/products')
-	})
-	res.redirect('/admin/products')
+	try {
+		await Product.deleteById(prodId)
+		console.log('Product deleted successfully')
+		res.redirect('/admin/products')
+	} catch (error) {
+		console.error('Error deleting product:', error)
+		res.status(500).render('error', {
+			pageTitle: 'Error',
+			errorMessage: 'An error occurred.',
+		})
+	}
 }
 
-export const getEditProduct = (req: Request, res: Response) => {
-	const editMode = req.query.edit === 'true' && true
+export const getEditProduct = async (req: Request, res: Response) => {
+	const editMode = req.query.edit === 'true'
 
 	if (!editMode) {
 		res.redirect('/')
+		return
 	}
 
 	const prodId = req.params.productId
 
-	Product.findById(prodId, (product: any) => {
+	try {
+		const product = await Product.findById(prodId)
 		res.render('admin/edit-product', {
 			pageTitle: 'Edit Product',
 			path: '/admin/edit-product',
 			editing: editMode,
 			product: product,
 		})
-	})
+	} catch (error) {
+		console.error('Error getting edit product:', error)
+		res.status(500).render('error', {
+			pageTitle: 'Error',
+			errorMessage: 'An error occurred.',
+		})
+	}
 }

@@ -1,4 +1,4 @@
-import fs from 'fs'
+import fs from 'fs/promises'
 import path from 'path'
 import mainDir from '../utils/path'
 
@@ -6,7 +6,6 @@ const productFilePath = path.join(mainDir, 'data', 'cart.json')
 
 interface Product {
 	id: string
-	// Add other properties of a product here
 	quantity: number
 	price: number
 }
@@ -17,39 +16,68 @@ interface CartData {
 }
 
 export class Cart {
-	static addProduct(id: string, productPrice: number) {
-		//fetch the previous cart
-		fs.readFile(productFilePath, (err, fileContent) => {
-			let cart: CartData = { products: [], totalPrice: 0 } // Initialize cart with default values
-			if (!err) {
-				cart = JSON.parse(fileContent.toString())
+	private static async getCartFromFile(): Promise<CartData> {
+		try {
+			const fileContent = await fs.readFile(productFilePath)
+			return JSON.parse(fileContent.toString())
+		} catch (error) {
+			return { products: [], totalPrice: 0 }
+		}
+	}
+
+	private static async writeCartToFile(cart: CartData): Promise<void> {
+		try {
+			await fs.writeFile(productFilePath, JSON.stringify(cart))
+		} catch (error) {
+			console.error('Error writing cart data:', error)
+		}
+	}
+
+	static async addProduct(id: string, productPrice: number) {
+		try {
+			const cart = await this.getCartFromFile()
+			if (!cart.products) {
+				cart.products = []
 			}
 
-			//analyze the cart => find existing product
 			const existingProductIndex = cart.products.findIndex(
 				(product) => product.id === id
 			)
 
-			//Add new product/ increase the quantity
 			if (existingProductIndex !== -1) {
-				// Increase the quantity of the existing product
 				cart.products[existingProductIndex].quantity++
 			} else {
-				// Add a new product with quantity 1
-				const newProduct: Product = { id, quantity: 1, price: +productPrice } // You should define other properties here
+				const newProduct: Product = { id, quantity: 1, price: +productPrice }
 				cart.products.push(newProduct)
 			}
 
-			// Calculate totalPrice based on the updated cart products
 			cart.totalPrice = cart.products.reduce(
 				(total, product) => total + product.price * product.quantity,
 				0
 			)
-			fs.writeFile(productFilePath, JSON.stringify(cart), (writeErr) => {
-				if (writeErr) {
-					console.error('Error writing cart data:', writeErr)
-				}
-			})
-		})
+
+			await this.writeCartToFile(cart)
+		} catch (error) {
+			console.error('Error adding product:', error)
+		}
+	}
+
+	static async deleteProduct(id: string) {
+		try {
+			const cart = await this.getCartFromFile()
+			const productIndex = cart.products.findIndex(
+				(product) => product.id === id
+			)
+
+			if (productIndex !== -1) {
+				const deletedProduct = cart.products.splice(productIndex, 1)[0]
+				cart.totalPrice -= deletedProduct.price * deletedProduct.quantity
+				await this.writeCartToFile(cart)
+			} else {
+				cart.totalPrice = 0
+			}
+		} catch (error) {
+			console.error('Error deleting product:', error)
+		}
 	}
 }
