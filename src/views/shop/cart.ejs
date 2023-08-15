@@ -6,6 +6,27 @@
 
 		<main>
 			<h1>Cart Items</h1>
+			<% if (cart.length > 0) { %>
+			<div class="grid-container">
+				<div>
+					<% cart.forEach((product) => {%>
+					<ul>
+						<li>
+							<%= product.title %>(<%= product.quantity %>) <%= product.price %>
+							<form action="/delete-cart-item" method="post">
+								<input type="hidden" name="itemId" value="<%= product.id %>" />
+								<button class="btn">Delete</button>
+							</form>
+						</li>
+					</ul>
+
+					<% }) %>
+					<h1>Total Price: <%= totalPrice %></h1>
+				</div>
+				<% } else {%>
+				<h1>No products in cart</h1>
+				<%}%>
+			</div>
 		</main>
 	</body>
 </html>

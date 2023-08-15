@@ -100,7 +100,7 @@ export class Product {
 			const fileContent = await readFileContent(productsFilePath)
 			const products = parseJson(fileContent)
 			const updatedProducts = products.filter((p: any) => p.id !== id)
-			await Cart.deleteProduct(id)
+			await Cart.deleteItemById(id)
 			await writeFileContent(productsFilePath, updatedProducts)
 		} catch (error) {
 			console.error('Error deleting product:', error)

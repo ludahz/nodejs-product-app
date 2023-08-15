@@ -63,8 +63,6 @@ export const postEditProduct = async (req: Request, res: Response) => {
 }
 
 export const postDeleteProduct = async (req: Request, res: Response) => {
-	console.log('This is post', req.params)
-
 	const prodId = req.params.productId
 
 	try {

@@ -1,17 +1,19 @@
 import fs from 'fs/promises'
 import path from 'path'
 import mainDir from '../utils/path'
+import { Product } from './product'
 
 const productFilePath = path.join(mainDir, 'data', 'cart.json')
 
-interface Product {
+interface iProduct {
 	id: string
 	quantity: number
 	price: number
+	title: string
 }
 
 interface CartData {
-	products: Product[]
+	products: iProduct[]
 	totalPrice: number
 }
 
@@ -47,7 +49,14 @@ export class Cart {
 			if (existingProductIndex !== -1) {
 				cart.products[existingProductIndex].quantity++
 			} else {
-				const newProduct: Product = { id, quantity: 1, price: +productPrice }
+				const product = await Product.findById(id)
+				console.log('This is product in add product', product)
+				const newProduct: iProduct = {
+					id,
+					quantity: 1,
+					price: +productPrice,
+					title: product.title,
+				}
 				cart.products.push(newProduct)
 			}
 
@@ -62,7 +71,7 @@ export class Cart {
 		}
 	}
 
-	static async deleteProduct(id: string) {
+	static async deleteItemById(id: string) {
 		try {
 			const cart = await this.getCartFromFile()
 			const productIndex = cart.products.findIndex(
@@ -78,6 +87,17 @@ export class Cart {
 			}
 		} catch (error) {
 			console.error('Error deleting product:', error)
+		}
+	}
+
+	static async getCart(): Promise<CartData> {
+		try {
+			const cart = await this.getCartFromFile()
+			console.log('This is cart in get cart', cart)
+			return cart
+		} catch (error) {
+			console.error('Error getting cart data:', error)
+			return { products: [], totalPrice: 0 }
 		}
 	}
 }

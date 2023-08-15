@@ -7,6 +7,7 @@ import {
 	getOrders,
 	getProductById,
 	getProducts,
+	postDeleteCartItem,
 } from '../controllers/shop'
 
 const router = Router()
@@ -19,5 +20,7 @@ router.get('/cart', getCart)
 router.post('/cart', addToCart)
 router.get('/orders', getOrders)
 router.get('/checkout', getCheckout)
+
+router.post('/delete-cart-item', postDeleteCartItem)
 
 export default router
