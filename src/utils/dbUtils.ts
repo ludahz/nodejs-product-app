@@ -10,10 +10,10 @@ const pool = mysql.createPool({
 })
 
 // Execute a query using the connection pool
-async function executeQuery(query: string) {
+async function executeQuery(query: string, values?: any[]) {
 	try {
 		const connection = await pool.getConnection()
-		const [rows, fields] = await connection.query(query)
+		const [rows, fields] = await connection.query(query, values)
 		connection.release()
 		return rows
 	} catch (err) {

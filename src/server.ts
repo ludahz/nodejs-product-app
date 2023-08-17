@@ -6,22 +6,20 @@ import { adminRoutes } from './routes/admin'
 import mainDir from './utils/path'
 import { get404 } from './controllers/error'
 
-import dbUtils from './utils/dbUtils'
-
 const app: Express = express()
 const PORT: number = 3000
 
-async function fetchDataFromDatabase() {
-	const query = 'SELECT * FROM products'
-	try {
-		const results = await dbUtils.executeQuery(query)
-		console.log('Query results: ', results)
-	} catch (err) {
-		console.error('Error executing query: ', err)
-	}
-}
+// async function fetchDataFromDatabase() {
+// 	const query = 'SELECT * FROM products'
+// 	try {
+// 		const results = await dbUtils.executeQuery(query)
+// 		console.log('Query results: ', results)
+// 	} catch (err) {
+// 		console.error('Error executing query: ', err)
+// 	}
+// }
 
-fetchDataFromDatabase()
+// fetchDataFromDatabase()
 
 // Set up view engine and views directory
 app.set('view engine', 'ejs')

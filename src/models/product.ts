@@ -1,36 +1,5 @@
-import fs from 'fs/promises'
-import path from 'path'
-import mainDir from '../utils/path'
 import { Cart } from './cart'
-
-const productsFilePath = path.join(mainDir, 'data', 'products.json')
-
-const parseJson = (jsonString: string) => {
-	try {
-		return jsonString ? JSON.parse(jsonString) : []
-	} catch (error) {
-		console.error('Error parsing JSON:', error)
-		return []
-	}
-}
-
-async function readFileContent(filePath: string): Promise<string> {
-	try {
-		const fileContent = await fs.readFile(filePath)
-		return fileContent.toString()
-	} catch (error) {
-		console.error('Error reading file:', error)
-		return ''
-	}
-}
-
-async function writeFileContent(filePath: string, data: any): Promise<void> {
-	try {
-		await fs.writeFile(filePath, JSON.stringify(data))
-	} catch (error) {
-		console.error('Error writing to file:', error)
-	}
-}
+import dbUtils from '../utils/dbUtils'
 
 export class Product {
 	title: string
@@ -55,20 +24,26 @@ export class Product {
 
 	async save(): Promise<void> {
 		try {
-			const fileContent = await readFileContent(productsFilePath)
-			const products = parseJson(fileContent)
-
 			if (this.id) {
-				const existingProductIndex = products.findIndex(
-					(product: any) => product.id === this.id
-				)
-				products[existingProductIndex] = this
+				// Update existing product
+				const values = [
+					this.title,
+					this.imageUrl,
+					this.description,
+					this.price,
+					this.id,
+				]
+				const query =
+					'UPDATE products SET title=?, imageUrl=?, description=?, price=? WHERE id=?'
+				await dbUtils.executeQuery(query, values)
 			} else {
-				this.id = Math.random().toString()
-				products.push(this)
+				// Insert new product
+				this.id = Math.random().toString() // Generate a suitable ID
+				const values = [this.title, this.imageUrl, this.description, this.price]
+				const query =
+					'INSERT INTO products (title, imageUrl, description, price) VALUES (?, ?, ?, ?)'
+				await dbUtils.executeQuery(query, values)
 			}
-
-			await writeFileContent(productsFilePath, products)
 		} catch (error) {
 			console.error('Error saving product:', error)
 		}
@@ -76,8 +51,11 @@ export class Product {
 
 	static async fetchAll(): Promise<any[]> {
 		try {
-			const fileContent = await readFileContent(productsFilePath)
-			return parseJson(fileContent)
+			const query = 'SELECT * FROM products'
+
+			const results = await dbUtils.executeQuery(query)
+
+			return results as Product[]
 		} catch (error) {
 			console.error('Error fetching products:', error)
 			return []
@@ -86,9 +64,11 @@ export class Product {
 
 	static async findById(id: string): Promise<any | null> {
 		try {
-			const fileContent = await readFileContent(productsFilePath)
-			const products = parseJson(fileContent)
-			return products.find((p: any) => p.id === id) || null
+			const query = 'SELECT * FROM products WHERE id = ?'
+			const values = [id]
+			const results: any = await dbUtils.executeQuery(query, values)
+
+			return results.length ? results[0] : null
 		} catch (error) {
 			console.error('Error finding product:', error)
 			return null
@@ -97,11 +77,10 @@ export class Product {
 
 	static async deleteById(id: string): Promise<void> {
 		try {
-			const fileContent = await readFileContent(productsFilePath)
-			const products = parseJson(fileContent)
-			const updatedProducts = products.filter((p: any) => p.id !== id)
-			await Cart.deleteItemById(id)
-			await writeFileContent(productsFilePath, updatedProducts)
+			const query = 'DELETE FROM products WHERE id = ?'
+			const values = [id]
+			await dbUtils.executeQuery(query, values)
+			await Cart.deleteItemById(id) // Make sure Cart is updated appropriately
 		} catch (error) {
 			console.error('Error deleting product:', error)
 		}
