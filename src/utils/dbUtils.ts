@@ -1,24 +1,12 @@
-// const mysql = require('mysql2/promise')
-import mysql from 'mysql2/promise'
+import { Sequelize } from 'sequelize'
 
-// Create a reusable connection pool
-const pool = mysql.createPool({
+const sequelize = new Sequelize({
+	dialect: 'mysql',
 	host: 'localhost',
-	user: 'root',
-	database: 'node-complete',
+	port: 3306,
+	username: 'root',
 	password: '106*park',
+	database: 'node-complete',
 })
 
-// Execute a query using the connection pool
-async function executeQuery(query: string, values?: any[]) {
-	try {
-		const connection = await pool.getConnection()
-		const [rows, fields] = await connection.query(query, values)
-		connection.release()
-		return rows
-	} catch (err) {
-		throw err
-	}
-}
-
-export default { executeQuery }
+export { sequelize }
