@@ -5,21 +5,10 @@ import shopRoutes from './routes/shop'
 import { adminRoutes } from './routes/admin'
 import mainDir from './utils/path'
 import { get404 } from './controllers/error'
+import { sequelize } from './utils/dbUtils'
 
 const app: Express = express()
 const PORT: number = 3000
-
-// async function fetchDataFromDatabase() {
-// 	const query = 'SELECT * FROM products'
-// 	try {
-// 		const results = await dbUtils.executeQuery(query)
-// 		console.log('Query results: ', results)
-// 	} catch (err) {
-// 		console.error('Error executing query: ', err)
-// 	}
-// }
-
-// fetchDataFromDatabase()
 
 // Set up view engine and views directory
 app.set('view engine', 'ejs')
@@ -37,7 +26,15 @@ app.use(shopRoutes)
 // 404 Not Found Route
 app.use(get404)
 
-// Start the server
-app.listen(PORT, () => {
-	console.log(`App is listening at port ${PORT}`)
-})
+sequelize
+	.sync()
+	.then(() => {
+		// Start the server
+		app.listen(PORT, () => {
+			console.log(`App is listening at port ${PORT}`)
+			console.log('Database synchronization was successful')
+		})
+	})
+	.catch((error) => {
+		console.error('Error syncing models with database:', error)
+	})

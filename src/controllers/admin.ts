@@ -1,5 +1,6 @@
 import { Request, Response } from 'express'
-import { Product } from '../models/product'
+import Product from '../models/product'
+// import { Product } from '../models/product'
 
 export const getAddProducts = (req: Request, res: Response) => {
 	res.render('admin/edit-product', {
@@ -11,7 +12,7 @@ export const getAddProducts = (req: Request, res: Response) => {
 
 export const getAdminProducts = async (req: Request, res: Response) => {
 	try {
-		const products = await Product.fetchAll()
+		const products = await Product.findAll()
 		res.render('admin/product-list', {
 			pageTitle: 'Admin Products',
 			path: '/admin/products',
@@ -32,8 +33,15 @@ export const postAddProduct = async (req: Request, res: Response) => {
 	const { title, imageUrl, description, price } = req.body
 
 	try {
-		const product = new Product(null, title, imageUrl, description, price)
-		await product.save()
+		// const product = new Product(null, title, imageUrl, description, price)
+		// await product.save()
+		const newProduct = await Product.create({
+			title: title,
+			imageUrl: imageUrl,
+			description: description,
+			price: price,
+		})
+		console.log('This is new product', newProduct)
 		res.redirect('/')
 	} catch (error) {
 		console.error('Error adding product:', error)
@@ -50,8 +58,17 @@ export const postEditProduct = async (req: Request, res: Response) => {
 	const { title, imageUrl, description, price, productId } = req.body
 
 	try {
-		const product = new Product(productId, title, imageUrl, description, price)
-		await product.save()
+		await Product.update(
+			{
+				title: title,
+				imageUrl: imageUrl,
+				description: description,
+				price: price,
+			},
+			{ where: { id: productId } }
+		)
+		// const product = new Product(productId, title, imageUrl, description, price)
+		// await product.save()
 		res.redirect('/admin/products')
 	} catch (error) {
 		console.error('Error editing product:', error)
@@ -66,7 +83,12 @@ export const postDeleteProduct = async (req: Request, res: Response) => {
 	const prodId = req.params.productId
 
 	try {
-		await Product.deleteById(prodId)
+		// await Product.deleteById(prodId)
+		await Product.destroy({
+			where: {
+				id: prodId,
+			},
+		})
 		console.log('Product deleted successfully')
 		res.redirect('/admin/products')
 	} catch (error) {
@@ -89,7 +111,7 @@ export const getEditProduct = async (req: Request, res: Response) => {
 	const prodId = req.params.productId
 
 	try {
-		const product = await Product.findById(prodId)
+		const product = await Product.findByPk(prodId)
 		res.render('admin/edit-product', {
 			pageTitle: 'Edit Product',
 			path: '/admin/edit-product',
