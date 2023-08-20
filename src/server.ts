@@ -7,6 +7,10 @@ import mainDir from './utils/path'
 import { get404 } from './controllers/error'
 import { sequelize } from './utils/dbUtils'
 
+import Product from './models/product'
+import User from './models/user'
+import session from 'express-session'
+
 const app: Express = express()
 const PORT: number = 3000
 
@@ -19,6 +23,30 @@ app.use(express.urlencoded({ extended: true }))
 app.use(express.json())
 app.use(express.static(resolve(mainDir, '..', 'public')))
 
+// Set up session
+app.use(
+	session({
+		secret: '-thisIsMySecretKey-',
+		resave: false,
+		saveUninitialized: false,
+	})
+)
+
+app.use(async (req: any, res, next) => {
+	// If user is not already stored in the session, fetch it from the database
+	if (!req.session.user) {
+		try {
+			const user = await User.findByPk(1)
+			req.session.user = user
+		} catch (error) {
+			console.error('Error fetching user:', error)
+			next(error)
+			return
+		}
+	}
+	next()
+})
+
 // Routes
 app.use('/admin', adminRoutes)
 app.use(shopRoutes)
@@ -26,9 +54,24 @@ app.use(shopRoutes)
 // 404 Not Found Route
 app.use(get404)
 
+Product.belongsTo(User, {
+	constraints: true,
+	onDelete: 'CASCADE',
+})
+User.hasMany(Product)
+
 sequelize
 	.sync()
 	.then(() => {
+		return User.findOrCreate({
+			where: { id: 1 },
+			defaults: {
+				name: 'Ludah',
+				email: 'ludah@example.com',
+			},
+		})
+	})
+	.then(([user]) => {
 		// Start the server
 		app.listen(PORT, () => {
 			console.log(`App is listening at port ${PORT}`)

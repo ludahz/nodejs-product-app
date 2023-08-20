@@ -4,7 +4,7 @@ import Product from '../models/product'
 // import { Cart } from '../models/cart'
 
 export const getProducts = async (req: Request, res: Response) => {
-	console.log('WE are here')
+	console.log('This is request user', (req.session as any).user)
 	try {
 		const products = await Product.findAll()
 		console.log('This is products', products)

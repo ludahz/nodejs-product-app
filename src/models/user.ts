@@ -1,16 +1,14 @@
 import { Model, DataTypes } from 'sequelize'
-import { sequelize } from '../utils/dbUtils'
+import { sequelize } from '../utils/dbUtils' //sequelize instance
 
-class Product extends Model {
+class User extends Model {
 	// Use 'declare' to add typing information without emitting the public class field
 	declare id: number
-	declare title: string
-	declare imageUrl: string
-	declare description: string
-	declare price: number
+	declare name: string
+	declare email: string
 }
 
-Product.init(
+User.init(
 	{
 		id: {
 			type: DataTypes.INTEGER,
@@ -18,27 +16,20 @@ Product.init(
 			primaryKey: true,
 			autoIncrement: true,
 		},
-		title: {
+		name: {
 			type: DataTypes.STRING,
 			allowNull: false,
 		},
-		imageUrl: {
+		email: {
 			type: DataTypes.STRING,
 			allowNull: false,
-		},
-		description: {
-			type: DataTypes.TEXT,
-			allowNull: false,
-		},
-		price: {
-			type: DataTypes.DOUBLE,
-			allowNull: false,
+			unique: true,
 		},
 	},
 	{
 		sequelize,
-		tableName: 'products',
+		tableName: 'users',
 	}
 )
 
-export default Product
+export default User

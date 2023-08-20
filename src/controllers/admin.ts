@@ -33,15 +33,14 @@ export const postAddProduct = async (req: Request, res: Response) => {
 	const { title, imageUrl, description, price } = req.body
 
 	try {
-		// const product = new Product(null, title, imageUrl, description, price)
-		// await product.save()
-		const newProduct = await Product.create({
+		//same as await Product.create but without passing the UserId
+		await (req.session as any).user.createProduct({
 			title: title,
 			imageUrl: imageUrl,
 			description: description,
 			price: price,
 		})
-		console.log('This is new product', newProduct)
+
 		res.redirect('/')
 	} catch (error) {
 		console.error('Error adding product:', error)
@@ -67,8 +66,7 @@ export const postEditProduct = async (req: Request, res: Response) => {
 			},
 			{ where: { id: productId } }
 		)
-		// const product = new Product(productId, title, imageUrl, description, price)
-		// await product.save()
+
 		res.redirect('/admin/products')
 	} catch (error) {
 		console.error('Error editing product:', error)
