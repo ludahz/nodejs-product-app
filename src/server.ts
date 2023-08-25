@@ -1,4 +1,4 @@
-import express, { Express, Request, Response, NextFunction } from 'express'
+import express, { Express, Request } from 'express'
 import { resolve } from 'path'
 
 import shopRoutes from './routes/shop'
@@ -7,7 +7,8 @@ import mainDir from './utils/path'
 import { get404 } from './controllers/error'
 import { sequelize } from './utils/dbUtils'
 
-import Product from './models/product'
+import './models/association'
+
 import User from './models/user'
 import session from 'express-session'
 
@@ -29,15 +30,19 @@ app.use(
 		secret: '-thisIsMySecretKey-',
 		resave: false,
 		saveUninitialized: false,
+		// store: new SequelizeStore({
+		// 	db: sequelize,
+		// }),
 	})
 )
 
 app.use(async (req: any, res, next) => {
 	// If user is not already stored in the session, fetch it from the database
-	if (!req.session.user) {
+	if (!req.user) {
 		try {
 			const user = await User.findByPk(1)
-			req.session.user = user
+			// req.session.user = user
+			req.user = user
 		} catch (error) {
 			console.error('Error fetching user:', error)
 			next(error)
@@ -54,25 +59,16 @@ app.use(shopRoutes)
 // 404 Not Found Route
 app.use(get404)
 
-Product.belongsTo(User, {
-	constraints: true,
-	onDelete: 'CASCADE',
-})
-User.hasMany(Product)
-
 sequelize
 	.sync()
-	.then(() => {
-		return User.findOrCreate({
+	.then(async () => {
+		const [user] = await User.findOrCreate({
 			where: { id: 1 },
 			defaults: {
 				name: 'Ludah',
 				email: 'ludah@example.com',
 			},
 		})
-	})
-	.then(([user]) => {
-		// Start the server
 		app.listen(PORT, () => {
 			console.log(`App is listening at port ${PORT}`)
 			console.log('Database synchronization was successful')

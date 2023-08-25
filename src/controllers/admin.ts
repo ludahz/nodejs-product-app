@@ -12,11 +12,18 @@ export const getAddProducts = (req: Request, res: Response) => {
 
 export const getAdminProducts = async (req: Request, res: Response) => {
 	try {
-		const products = await Product.findAll()
+		// Fetch products associated with the currently logged-in user
+		const products = await Product.findAll({
+			where: {
+				userId: (req as any).user.id,
+			},
+		})
+
+		// const products = await Product.findAll()
 		res.render('admin/product-list', {
 			pageTitle: 'Admin Products',
 			path: '/admin/products',
-			products,
+			products: products,
 		})
 	} catch (error) {
 		console.error('Error getting admin products:', error)
@@ -28,19 +35,25 @@ export const getAdminProducts = async (req: Request, res: Response) => {
 }
 
 export const postAddProduct = async (req: Request, res: Response) => {
-	console.log(req.body)
-
 	const { title, imageUrl, description, price } = req.body
 
 	try {
-		//same as await Product.create but without passing the UserId
-		await (req.session as any).user.createProduct({
-			title: title,
-			imageUrl: imageUrl,
-			description: description,
-			price: price,
-		})
+		// const user = await (req.session as any).user
+		const user: any = (req as any).user
 
+		if (!user) {
+			res.status(403).send('You must be logged in to create a product.')
+			return
+		} else {
+			//same as await Product.create but without passing the UserId
+			//Magic associations
+			await user.createProduct({
+				title: title,
+				imageUrl: imageUrl,
+				description: description,
+				price: price,
+			})
+		}
 		res.redirect('/')
 	} catch (error) {
 		console.error('Error adding product:', error)
@@ -52,8 +65,6 @@ export const postAddProduct = async (req: Request, res: Response) => {
 }
 
 export const postEditProduct = async (req: Request, res: Response) => {
-	console.log('This is post', req.body)
-
 	const { title, imageUrl, description, price, productId } = req.body
 
 	try {
@@ -109,7 +120,13 @@ export const getEditProduct = async (req: Request, res: Response) => {
 	const prodId = req.params.productId
 
 	try {
-		const product = await Product.findByPk(prodId)
+		const product = await Product.findOne({
+			where: {
+				id: prodId,
+				UserId: (req.session as any).user.id,
+			},
+		})
+
 		res.render('admin/edit-product', {
 			pageTitle: 'Edit Product',
 			path: '/admin/edit-product',

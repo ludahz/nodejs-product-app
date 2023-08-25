@@ -10,6 +10,7 @@
   "author": "Ludah Makori",
   "license": "ISC",
   "dependencies": {
+    "connect-session-sequelize": "^7.1.7",
     "ejs": "^3.1.9",
     "express": "^4.18.2",
     "express-session": "^1.17.3",

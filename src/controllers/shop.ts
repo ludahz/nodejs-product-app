@@ -1,13 +1,29 @@
 import { Request, Response } from 'express'
 import Product from '../models/product'
 
-// import { Cart } from '../models/cart'
+const renderCart = (res: Response, cart: any[], totalPrice: number) => {
+	res.render('shop/cart', {
+		pageTitle: 'My Cart',
+		path: '/cart',
+		cart: cart,
+		totalPrice: totalPrice.toFixed(2),
+	})
+}
+const renderErrorPage = (res: Response) => {
+	res.status(500).render('error', {
+		pageTitle: 'Error',
+		errorMessage: 'An error occurred.',
+	})
+}
+
+const calculateTotalPrice = (items: any[]) => {
+	return items.reduce((total, item) => total + item.price, 0)
+}
 
 export const getProducts = async (req: Request, res: Response) => {
-	console.log('This is request user', (req.session as any).user)
 	try {
-		const products = await Product.findAll()
-		console.log('This is products', products)
+		const products = await (req as any).user.getProducts()
+
 		res.render('shop/product-list', {
 			pageTitle: 'All Products',
 			path: '/products',
@@ -15,10 +31,7 @@ export const getProducts = async (req: Request, res: Response) => {
 		})
 	} catch (error) {
 		console.error('Error getting products:', error)
-		res.status(500).render('error', {
-			pageTitle: 'Error',
-			errorMessage: 'An error occurred.',
-		})
+		renderErrorPage(res)
 	}
 }
 
@@ -26,13 +39,6 @@ export const getProductById = async (req: Request, res: Response) => {
 	const prodId = req.params.productId
 
 	try {
-		// const product = await Product.findById(prodId)
-		// res.render('shop/product-detail', {
-		// 	pageTitle: 'Product Detail',
-		// 	path: '/products',
-		// 	product,
-		// })
-
 		const product = await Product.findByPk(prodId)
 		if (product === null) {
 			console.log('Product not found')
@@ -45,17 +51,14 @@ export const getProductById = async (req: Request, res: Response) => {
 		}
 	} catch (error) {
 		console.error('Error getting product by ID:', error)
-		res.status(500).render('error', {
-			pageTitle: 'Error',
-			errorMessage: 'An error occurred.',
-		})
+		renderErrorPage(res)
 	}
 }
 
 export const getIndex = async (req: Request, res: Response) => {
 	try {
 		const products = await Product.findAll()
-		console.log('This is products', products)
+
 		res.render('shop/index', {
 			pageTitle: 'Shop',
 			path: '/',
@@ -63,39 +66,127 @@ export const getIndex = async (req: Request, res: Response) => {
 		})
 	} catch (error) {
 		console.error('Error getting products for index:', error)
-		res.status(500).render('error', {
-			pageTitle: 'Error',
-			errorMessage: 'An error occurred.',
-		})
+		renderErrorPage(res)
 	}
 }
 
 export const getCart = async (req: Request, res: Response) => {
-	// const cart = await Cart.getCart()
-	// console.log('This is cart', cart)
-	// res.render('shop/cart', {
-	// 	pageTitle: 'My Cart',
-	// 	path: '/cart',
-	// 	cart: cart.products,
-	// 	totalPrice: cart.totalPrice,
-	// })
+	try {
+		const user = (req as any).user
+		const cart = await user.getCart()
+
+		if (!cart) {
+			renderCart(res, [], 0)
+		} else {
+			const items = await cart.getCartItems()
+			const totalPrice = calculateTotalPrice(items)
+			renderCart(res, items, totalPrice)
+		}
+	} catch (error) {
+		console.error('Error fetching user cart:', error)
+		renderCart(res, [], 0)
+	}
 }
 
 export const addToCart = async (req: Request, res: Response) => {
 	const prodId = req.body.productId
 
 	try {
-		// const product = await Product.findById(prodId)
-		// Cart.addProduct(prodId, product.price)
-		res.redirect('/')
+		const cart = await (req as any).user.getCart()
+
+		const product = await (req as any).user.getProducts({
+			where: { id: prodId },
+		})
+
+		if (!cart) {
+			const newCart = await (req as any).user.createCart({})
+			await newCart.createCartItem({
+				id: prodId,
+				title: product[0].title,
+				quantity: 1,
+				price: product[0].price,
+			})
+		} else {
+			const items = await cart.getCartItems({
+				where: {
+					id: prodId,
+				},
+			})
+
+			if (items.length === 0) {
+				await cart.createCartItem({
+					id: prodId,
+					title: product[0].title,
+					quantity: 1,
+					price: product[0].price,
+				})
+			} else {
+				items[0].update({
+					quantity: items[0].quantity + 1,
+					price: items[0].price + product[0].price,
+				})
+			}
+		}
+
+		// res.redirect('/')
+		res.redirect('/cart')
 	} catch (error) {
 		console.error('Error adding product to cart:', error)
-		res.status(500).render('error', {
-			pageTitle: 'Error',
-			errorMessage: 'An error occurred.',
-		})
+		renderErrorPage(res)
 	}
 }
+
+// export const addToCart = async (req: Request, res: Response) => {
+// 	const prodId = req.body.productId
+
+// 	try {
+// 		const user: any = (req as any).user // Assuming user instance is stored in req.user
+
+// 		// Get the product by its id
+// 		const product = await Product.findByPk(prodId)
+
+// 		if (!product) {
+// 			throw new Error('Product not found')
+// 		}
+
+// 		// Check if the product is already in the user's cart
+// 		const cartItem = await user.getCartItems({
+// 			// where: { id: prodId },
+// 		})
+
+// 		if (cartItem?.length === 0) {
+// 			// Product not in cart, create a new cart item
+// 			await user.createCartItem({
+// 				id: prodId,
+// 				quantity: 1,
+// 				title: product.title,
+// 				price: product.price,
+// 			})
+// 		} else {
+// 			// Product already in cart, update quantity
+// 			if (cartItem[0]?.id === prodId) {
+// 				await cartItem[0].update({
+// 					quantity: cartItem[0]?.quantity + 1,
+// 				})
+// 			} else {
+// 				await user.createCartItem({
+// 					id: prodId,
+// 					quantity: 1,
+// 					title: product.title,
+// 					price: product.price,
+// 				})
+// 			}
+// 		}
+
+// 		res.redirect('/')
+// 	} catch (error) {
+// 		console.error('Error adding product to cart:', error)
+// 		res.status(500).render('error', {
+// 			pageTitle: 'Error',
+// 			errorMessage: 'An error occurred.',
+// 		})
+// 	}
+// }
 
 export const getOrders = async (req: Request, res: Response) => {
 	res.render('shop/orders', { pageTitle: 'My Orders', path: '/orders' })
@@ -106,18 +197,31 @@ export const getCheckout = async (req: Request, res: Response) => {
 }
 
 export const postDeleteCartItem = async (req: Request, res: Response) => {
-	const id = req.body.itemId
-
-	console.log('This is id', id)
 	try {
-		// await Cart.deleteItemById(id)
+		const id = req.body.itemId
+		const user = (req as any).user
+
+		const cart = await user.getCart()
+
+		const itemToDelete = await cart.getCartItems({ where: { id: id } })
+
+		if (itemToDelete.length === 0) {
+			throw new Error('Item not found in cart')
+		}
+
+		await itemToDelete[0].destroy()
+
+		const newCart = await user.getCart()
+		const newItems = await newCart.getCartItems()
+
+		if (newItems.length === 0) {
+			await cart.destroy()
+		}
+
 		console.log('Cart item deleted successfully')
 		res.redirect('/cart')
 	} catch (error) {
 		console.error('Error deleting cart item:', error)
-		res.status(500).render('error', {
-			pageTitle: 'Error',
-			errorMessage: 'An error occurred.',
-		})
+		renderErrorPage(res)
 	}
 }
