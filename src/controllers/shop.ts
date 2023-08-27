@@ -1,5 +1,7 @@
 import { Request, Response } from 'express'
 import Product from '../models/product'
+import CartItem from '../models/cartItem'
+import Order from '../models/order'
 
 const renderCart = (res: Response, cart: any[], totalPrice: number) => {
 	res.render('shop/cart', {
@@ -189,7 +191,58 @@ export const addToCart = async (req: Request, res: Response) => {
 // }
 
 export const getOrders = async (req: Request, res: Response) => {
-	res.render('shop/orders', { pageTitle: 'My Orders', path: '/orders' })
+	const orders = await (req as any).user.getOrders({
+		include: ['Products'],
+	})
+
+	console.log('This is orders', orders)
+
+	res.render('shop/orders', {
+		pageTitle: 'My Orders',
+		path: '/orders',
+		orders: orders,
+	})
+}
+
+export const postCreateOrder = async (req: Request, res: Response) => {
+	console.log('This was triggered in post create order')
+
+	const cart = await (req as any).user.getCart({
+		include: {
+			model: CartItem,
+		},
+	})
+
+	const items = await cart.getCartItems()
+	const totalPrice = calculateTotalPrice(items)
+	const date = new Date()
+
+	const order = await (req as any).user.createOrder({
+		orderDate: date.toLocaleDateString('en-US', {
+			weekday: 'short',
+			month: 'short',
+			day: 'numeric',
+		}),
+		status: 'Pending', // Set the initial order status
+		totalAmount: totalPrice,
+		// ... other order-specific attributes
+	})
+
+	// Move cart items to the order
+	for (const cartItem of cart.CartItems) {
+		await order.addProduct(cartItem.Product, {
+			through: {
+				quantity: cartItem.quantity,
+				price: cartItem.price,
+			},
+		})
+
+		// Remove cart item from cart
+		await cartItem.destroy()
+		await cart.destroy()
+	}
+
+	res.redirect('/orders')
 }
 
 export const getCheckout = async (req: Request, res: Response) => {

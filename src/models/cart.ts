@@ -22,7 +22,4 @@ Cart.init(
 	}
 )
 
-Cart.hasMany(CartItem) // A Cart can have many CartItems
-Cart.belongsTo(User) // A Cart belongs to a User
-
 export default Cart

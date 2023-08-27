@@ -6,6 +6,19 @@
 
 		<main>
 			<h1>Orders</h1>
+			<% if (orders.length > 0) { %>
+			<ul class="cart__item-list">
+				<% orders.forEach((order) => {%>
+				<li class="cart__item">
+					<h2>Status: <%= order.status %></h2>
+					<h2>Date: <%= order.orderDate %></h2>
+					<h2>Total: <%= order.totalAmount %></h2>
+				</li>
+				<% }) %>
+			</ul>
+			<%} else {%>
+			<h1>No orders placed yet!!</h1>
+			<%}%>
 		</main>
 	</body>
 </html>

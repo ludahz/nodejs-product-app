@@ -60,6 +60,7 @@ app.use(shopRoutes)
 app.use(get404)
 
 sequelize
+	// .sync({ force: true })
 	.sync()
 	.then(async () => {
 		const [user] = await User.findOrCreate({
